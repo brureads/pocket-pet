@@ -24,8 +24,12 @@ body {
   );
 }
 
-button {
+button,
+input {
   font: inherit;
+}
+
+button {
   cursor: pointer;
 }
 
@@ -75,14 +79,10 @@ button {
 
 .pet-area {
   position: relative;
-  min-height: 280px;
+  min-height: 300px;
   padding: 20px;
   border-radius: 24px;
-  background: linear-gradient(
-    180deg,
-    #fff0f7,
-    #f9efff
-  );
+  background: linear-gradient(180deg, #fff0f7, #f9efff);
   border: 1px solid #f6e3f2;
   overflow: hidden;
 }
@@ -106,6 +106,8 @@ button {
 }
 
 .pet {
+  --pet-color: #fffdfd;
+
   position: relative;
   width: 120px;
   height: 125px;
@@ -113,22 +115,39 @@ button {
   animation: float 3s ease-in-out infinite;
 }
 
+.pet.cor-branco {
+  --pet-color: #fffdfd;
+}
+
+.pet.cor-rosa {
+  --pet-color: #ffd0e3;
+}
+
+.pet.cor-lilas {
+  --pet-color: #dfccfa;
+}
+
+.pet.cor-creme {
+  --pet-color: #ffe8bb;
+}
+
 .ear {
   position: absolute;
   top: -18px;
   width: 37px;
   height: 83px;
-  background: #fffdfd;
+  background: var(--pet-color);
   border: 3px solid #eddbe9;
   border-radius: 50% 50% 40% 40%;
   z-index: 0;
+  transition: background 0.3s;
 }
 
 .ear::after {
   content: '';
   position: absolute;
   inset: 9px 9px 12px;
-  background: #f5c5d9;
+  background: #f5aeca;
   border-radius: inherit;
 }
 
@@ -147,10 +166,11 @@ button {
   bottom: 0;
   width: 120px;
   height: 110px;
-  background: #fffdfd;
+  background: var(--pet-color);
   border: 3px solid #eddbe9;
   border-radius: 48% 48% 44% 44%;
   z-index: 1;
+  transition: background 0.3s;
 }
 
 .face {
@@ -187,7 +207,7 @@ button {
 .cheeks span {
   width: 19px;
   height: 10px;
-  background: #f6c3d3;
+  background: #f0a6c0;
   border-radius: 50%;
   opacity: 0.8;
 }
@@ -217,6 +237,7 @@ button {
   font-size: 21px;
   font-weight: 900;
   color: #92739f;
+  overflow-wrap: anywhere;
 }
 
 .pet-description {
@@ -235,7 +256,6 @@ button {
 .pet.cansado .eye {
   height: 3px;
   margin-top: 7px;
-  border-radius: 50%;
 }
 
 .pet.cansado {
@@ -247,6 +267,23 @@ button {
   height: 12px;
   border: 2px solid #a78091;
   border-radius: 50%;
+}
+
+.customize-button {
+  margin-top: 15px;
+  padding: 8px 19px;
+  border: 1px solid #e8c9e7;
+  border-radius: 20px;
+  background: #ffffffab;
+  color: #a17bac;
+  font-size: 11px;
+  font-weight: 800;
+  transition: 0.2s;
+}
+
+.customize-button:hover {
+  background: white;
+  transform: translateY(-2px);
 }
 
 .stats {
@@ -318,11 +355,6 @@ button {
   transform: scale(0.96);
 }
 
-.action-button:focus-visible {
-  outline: 2px solid #a68ed1;
-  outline-offset: 3px;
-}
-
 .message {
   margin: 20px 0 0;
   padding: 13px;
@@ -338,6 +370,158 @@ button {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 2px;
+}
+
+/* Janela de personalização */
+
+.customize-modal {
+  width: calc(100% - 32px);
+  max-width: 390px;
+  padding: 30px;
+  border: 1px solid #f2dce9;
+  border-radius: 25px;
+  background: #fffafd;
+  color: #67566d;
+  box-shadow: 0 20px 70px #71507230;
+}
+
+.customize-modal::backdrop {
+  background: #43304775;
+  backdrop-filter: blur(5px);
+}
+
+.customize-modal h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #a47cab;
+  text-align: center;
+}
+
+.modal-description {
+  margin: 8px 0 25px;
+  color: #a99ab0;
+  font-size: 12px;
+  text-align: center;
+}
+
+.customize-modal label[for="pet-name-input"],
+.color-label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#pet-name-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #eddaea;
+  border-radius: 12px;
+  outline: none;
+  background: white;
+  color: #67566d;
+}
+
+#pet-name-input:focus {
+  border-color: #c6a3de;
+}
+
+.color-label {
+  margin-top: 24px;
+}
+
+.color-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+
+.color-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #97819e;
+}
+
+.color-option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.color-circle {
+  display: block;
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  border: 2px solid #eadbe9;
+  transition: 0.2s;
+}
+
+.color-circle.branco {
+  background: #fffdfd;
+}
+
+.color-circle.rosa {
+  background: #ffd0e3;
+}
+
+.color-circle.lilas {
+  background: #dfccfa;
+}
+
+.color-circle.creme {
+  background: #ffe8bb;
+}
+
+.color-option input:checked + .color-circle {
+  border: 3px solid #a77cbc;
+  box-shadow: 0 0 0 3px #f2e3f7;
+  transform: scale(1.07);
+}
+
+.color-option input:focus-visible + .color-circle {
+  outline: 2px solid #92739f;
+  outline-offset: 4px;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.modal-actions button {
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.cancel-button {
+  background: #f2eaf3;
+  color: #967e9c;
+}
+
+.save-button {
+  background: #e9a3c6;
+  color: white;
+}
+
+.save-button:hover {
+  background: #d68bb2;
+}
+
+button:focus-visible {
+  outline: 2px solid #a68ed1;
+  outline-offset: 3px;
 }
 
 @keyframes float {
@@ -358,6 +542,10 @@ button {
   .game-title {
     font-size: 34px;
   }
+
+  .customize-modal {
+    padding: 22px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -366,7 +554,8 @@ button {
   }
 
   .progress-fill,
-  .action-button {
+  .action-button,
+  .color-circle {
     transition: none;
   }
 }

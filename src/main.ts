@@ -1,17 +1,20 @@
 
 import './style.css';
 
+type Humor = 'feliz' | 'triste' | 'cansado' | 'faminto';
+type Cor = 'branco' | 'rosa' | 'lilas' | 'creme';
+
 interface Pet {
   nome: string;
+  cor: Cor;
   fome: number;
   felicidade: number;
   energia: number;
 }
 
-type Humor = 'feliz' | 'triste' | 'cansado' | 'faminto';
-
 const petInicial: Pet = {
   nome: 'Mochi',
+  cor: 'branco',
   fome: 75,
   felicidade: 90,
   energia: 80
@@ -19,6 +22,8 @@ const petInicial: Pet = {
 
 const INTERVALO = 30000;
 const CHAVE_SALVAMENTO = 'pocket-pet-save';
+
+const cores: Cor[] = ['branco', 'rosa', 'lilas', 'creme'];
 
 function limitar(valor: number): number {
   return Math.max(0, Math.min(100, valor));
@@ -43,7 +48,13 @@ function carregarPet(): Pet {
           Number.isFinite(valores.energia)
         ) {
           return {
-            ...petInicial,
+            nome:
+              typeof valores.nome === 'string'
+                ? valores.nome.slice(0, 20)
+                : petInicial.nome,
+            cor: cores.includes(valores.cor as Cor)
+              ? valores.cor as Cor
+              : petInicial.cor,
             fome: limitar(valores.fome),
             felicidade: limitar(valores.felicidade),
             energia: limitar(valores.energia)
@@ -83,7 +94,9 @@ if (app) {
       <header class="game-header">
         <span class="eyebrow">YOUR LITTLE COMPANION</span>
         <h1 class="game-title">pocket pet<span>.</span></h1>
-        <p class="subtitle">Um cantinho especial para cuidar do Mochi.</p>
+        <p class="subtitle">
+          Um cantinho especial para cuidar do seu bichinho.
+        </p>
       </header>
 
       <section class="pet-area">
@@ -110,13 +123,19 @@ if (app) {
               </div>
             </div>
           </div>
+
           <div class="pet-shadow"></div>
         </div>
 
-        <h2 class="pet-name">${pet.nome}</h2>
+        <h2 class="pet-name" id="pet-name"></h2>
+
         <p class="pet-description" id="pet-description">
           Seu pequeno melhor amigo.
         </p>
+
+        <button class="customize-button" id="customize">
+          Personalizar
+        </button>
       </section>
 
       <section class="stats">
@@ -125,8 +144,10 @@ if (app) {
             <span>Saciedade</span>
             <span id="hunger-value">0%</span>
           </div>
+
           <div class="progress-bar">
-            <div class="progress-fill hunger-fill" id="hunger-bar"></div>
+            <div class="progress-fill hunger-fill"
+                 id="hunger-bar"></div>
           </div>
         </div>
 
@@ -135,8 +156,10 @@ if (app) {
             <span>Felicidade</span>
             <span id="happy-value">0%</span>
           </div>
+
           <div class="progress-bar">
-            <div class="progress-fill happy-fill" id="happy-bar"></div>
+            <div class="progress-fill happy-fill"
+                 id="happy-bar"></div>
           </div>
         </div>
 
@@ -145,8 +168,10 @@ if (app) {
             <span>Energia</span>
             <span id="energy-value">0%</span>
           </div>
+
           <div class="progress-bar">
-            <div class="progress-fill energy-fill" id="energy-bar"></div>
+            <div class="progress-fill energy-fill"
+                 id="energy-bar"></div>
           </div>
         </div>
       </section>
@@ -165,14 +190,70 @@ if (app) {
         </button>
       </section>
 
-      <p class="message" id="message" aria-live="polite">
-        Mochi está feliz em te ver.
-      </p>
+      <p class="message" id="message" aria-live="polite"></p>
 
       <footer class="game-footer">
         MADE WITH LOVE · POCKET PET
       </footer>
     </main>
+
+    <dialog class="customize-modal" id="customize-modal"
+            aria-labelledby="modal-title">
+      <form id="customize-form">
+        <h2 id="modal-title">Personalizar bichinho</h2>
+
+        <p class="modal-description">
+          Deixe seu pequeno companheiro com a sua cara.
+        </p>
+
+        <label for="pet-name-input">Nome</label>
+        <input
+          type="text"
+          id="pet-name-input"
+          maxlength="20"
+          placeholder="Nome do bichinho"
+          required
+        />
+
+        <p class="color-label">Escolha uma cor</p>
+
+        <div class="color-options">
+          <label class="color-option">
+            <input type="radio" name="pet-color" value="branco" />
+            <span class="color-circle branco"></span>
+            <span>Branco</span>
+          </label>
+
+          <label class="color-option">
+            <input type="radio" name="pet-color" value="rosa" />
+            <span class="color-circle rosa"></span>
+            <span>Rosa</span>
+          </label>
+
+          <label class="color-option">
+            <input type="radio" name="pet-color" value="lilas" />
+            <span class="color-circle lilas"></span>
+            <span>Lilás</span>
+          </label>
+
+          <label class="color-option">
+            <input type="radio" name="pet-color" value="creme" />
+            <span class="color-circle creme"></span>
+            <span>Creme</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancel-button" id="cancel">
+            Cancelar
+          </button>
+
+          <button type="submit" class="save-button">
+            Salvar
+          </button>
+        </div>
+      </form>
+    </dialog>
   `;
 }
 
@@ -184,13 +265,8 @@ function atualizarStatus(
   const barra = document.getElementById(barraId);
   const texto = document.getElementById(valorId);
 
-  if (barra) {
-    barra.style.width = `${valor}%`;
-  }
-
-  if (texto) {
-    texto.textContent = `${valor}%`;
-  }
+  if (barra) barra.style.width = `${valor}%`;
+  if (texto) texto.textContent = `${valor}%`;
 }
 
 function atualizarHumor(): void {
@@ -206,7 +282,7 @@ function atualizarHumor(): void {
   }> = {
     feliz: {
       nome: 'Feliz',
-      descricao: 'Mochi está aproveitando o dia.'
+      descricao: 'Aproveitando o dia.'
     },
     triste: {
       nome: 'Tristinho',
@@ -218,12 +294,12 @@ function atualizarHumor(): void {
     },
     faminto: {
       nome: 'Com fome',
-      descricao: 'Está na hora de comer alguma coisa.'
+      descricao: 'Está na hora de comer.'
     }
   };
 
   if (bichinho) {
-    bichinho.className = `pet ${humor}`;
+    bichinho.className = `pet ${humor} cor-${pet.cor}`;
   }
 
   if (status) {
@@ -240,30 +316,32 @@ function atualizarTela(): void {
   atualizarStatus('happy-bar', 'happy-value', pet.felicidade);
   atualizarStatus('energy-bar', 'energy-value', pet.energia);
 
+  const nome = document.getElementById('pet-name');
+
+  if (nome) nome.textContent = pet.nome;
+
   atualizarHumor();
 }
 
 function mostrarMensagem(texto: string): void {
   const mensagem = document.getElementById('message');
 
-  if (mensagem) {
-    mensagem.textContent = texto;
-  }
+  if (mensagem) mensagem.textContent = texto;
 }
 
 function verificarNecessidades(): void {
   const humor = descobrirHumor();
 
   if (humor === 'faminto') {
-    mostrarMensagem('Mochi precisa de uma refeição.');
+    mostrarMensagem(`${pet.nome} precisa comer.`);
   } else if (humor === 'cansado') {
-    mostrarMensagem('Mochi está precisando descansar.');
+    mostrarMensagem(`${pet.nome} precisa descansar.`);
   } else if (humor === 'triste') {
-    mostrarMensagem('Mochi gostaria de brincar com você.');
+    mostrarMensagem(`${pet.nome} gostaria de brincar.`);
   } else if (pet.fome <= 40) {
-    mostrarMensagem('Mochi está começando a sentir fome.');
+    mostrarMensagem(`${pet.nome} está ficando com fome.`);
   } else if (pet.energia <= 40) {
-    mostrarMensagem('Mochi está ficando cansadinho.');
+    mostrarMensagem(`${pet.nome} está ficando cansadinho.`);
   } else {
     mostrarMensagem('Tudo tranquilo por aqui.');
   }
@@ -274,12 +352,12 @@ document.querySelector('#feed')?.addEventListener('click', () => {
 
   atualizarTela();
   salvarPet();
-  mostrarMensagem('Mochi adorou a refeição!');
+  mostrarMensagem(`${pet.nome} adorou a refeição!`);
 });
 
 document.querySelector('#play')?.addEventListener('click', () => {
   if (pet.energia < 10) {
-    mostrarMensagem('Mochi está cansado demais para brincar.');
+    mostrarMensagem(`${pet.nome} está cansado demais para brincar.`);
     return;
   }
 
@@ -288,7 +366,7 @@ document.querySelector('#play')?.addEventListener('click', () => {
 
   atualizarTela();
   salvarPet();
-  mostrarMensagem('Mochi se divertiu muito com você!');
+  mostrarMensagem(`${pet.nome} se divertiu muito!`);
 });
 
 document.querySelector('#sleep')?.addEventListener('click', () => {
@@ -296,7 +374,74 @@ document.querySelector('#sleep')?.addEventListener('click', () => {
 
   atualizarTela();
   salvarPet();
-  mostrarMensagem('Mochi acordou de uma ótima soneca.');
+  mostrarMensagem(`${pet.nome} acordou de uma ótima soneca.`);
+});
+
+const modal = document.querySelector<HTMLDialogElement>(
+  '#customize-modal'
+);
+
+const formulario = document.querySelector<HTMLFormElement>(
+  '#customize-form'
+);
+
+const nomeInput = document.querySelector<HTMLInputElement>(
+  '#pet-name-input'
+);
+
+document.querySelector('#customize')?.addEventListener('click', () => {
+  if (!modal || !nomeInput || !formulario) return;
+
+  nomeInput.value = pet.nome;
+
+  const corAtual = formulario.querySelector<HTMLInputElement>(
+    `input[name="pet-color"][value="${pet.cor}"]`
+  );
+
+  if (corAtual) corAtual.checked = true;
+
+  modal.showModal();
+});
+
+document.querySelector('#cancel')?.addEventListener('click', () => {
+  modal?.close();
+});
+
+formulario?.addEventListener('submit', (evento) => {
+  evento.preventDefault();
+
+  if (!nomeInput) return;
+
+  const novoNome = nomeInput.value.trim();
+
+  if (!novoNome) {
+    nomeInput.setCustomValidity('Digite um nome.');
+    nomeInput.reportValidity();
+    return;
+  }
+
+  const corSelecionada = formulario.querySelector<HTMLInputElement>(
+    'input[name="pet-color"]:checked'
+  );
+
+  const novaCor = corSelecionada?.value as Cor | undefined;
+
+  pet.nome = novoNome.slice(0, 20);
+
+  if (novaCor && cores.includes(novaCor)) {
+    pet.cor = novaCor;
+  }
+
+  atualizarTela();
+  salvarPet();
+
+  modal?.close();
+
+  mostrarMensagem(`${pet.nome} está de visual novo!`);
+});
+
+nomeInput?.addEventListener('input', () => {
+  nomeInput.setCustomValidity('');
 });
 
 function passarTempo(): void {
