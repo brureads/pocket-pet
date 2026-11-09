@@ -1,0 +1,315 @@
+
+import './style.css';
+
+interface Pet {
+  nome: string;
+  fome: number;
+  felicidade: number;
+  energia: number;
+}
+
+type Humor = 'feliz' | 'triste' | 'cansado' | 'faminto';
+
+const petInicial: Pet = {
+  nome: 'Mochi',
+  fome: 75,
+  felicidade: 90,
+  energia: 80
+};
+
+const INTERVALO = 30000;
+const CHAVE_SALVAMENTO = 'pocket-pet-save';
+
+function limitar(valor: number): number {
+  return Math.max(0, Math.min(100, valor));
+}
+
+function carregarPet(): Pet {
+  const dados = localStorage.getItem(CHAVE_SALVAMENTO);
+
+  if (dados) {
+    try {
+      const salvo: unknown = JSON.parse(dados);
+
+      if (typeof salvo === 'object' && salvo !== null) {
+        const valores = salvo as Record<string, unknown>;
+
+        if (
+          typeof valores.fome === 'number' &&
+          Number.isFinite(valores.fome) &&
+          typeof valores.felicidade === 'number' &&
+          Number.isFinite(valores.felicidade) &&
+          typeof valores.energia === 'number' &&
+          Number.isFinite(valores.energia)
+        ) {
+          return {
+            ...petInicial,
+            fome: limitar(valores.fome),
+            felicidade: limitar(valores.felicidade),
+            energia: limitar(valores.energia)
+          };
+        }
+      }
+    } catch {
+      console.warn('Não foi possível carregar o progresso.');
+    }
+  }
+
+  return { ...petInicial };
+}
+
+const pet: Pet = carregarPet();
+
+function salvarPet(): void {
+  localStorage.setItem(
+    CHAVE_SALVAMENTO,
+    JSON.stringify(pet)
+  );
+}
+
+function descobrirHumor(): Humor {
+  if (pet.fome <= 20) return 'faminto';
+  if (pet.energia <= 20) return 'cansado';
+  if (pet.felicidade <= 20) return 'triste';
+
+  return 'feliz';
+}
+
+const app = document.querySelector<HTMLDivElement>('#app');
+
+if (app) {
+  app.innerHTML = `
+    <main class="game-container">
+      <header class="game-header">
+        <span class="eyebrow">YOUR LITTLE COMPANION</span>
+        <h1 class="game-title">pocket pet<span>.</span></h1>
+        <p class="subtitle">Um cantinho especial para cuidar do Mochi.</p>
+      </header>
+
+      <section class="pet-area">
+        <span class="pet-status" id="pet-status">Feliz</span>
+
+        <div class="pet-scene">
+          <div class="pet feliz" id="pet">
+            <div class="ear ear-left"></div>
+            <div class="ear ear-right"></div>
+
+            <div class="pet-body">
+              <div class="face">
+                <div class="eyes">
+                  <span class="eye"></span>
+                  <span class="eye"></span>
+                </div>
+
+                <div class="cheeks">
+                  <span></span>
+                  <span></span>
+                </div>
+
+                <div class="mouth"></div>
+              </div>
+            </div>
+          </div>
+          <div class="pet-shadow"></div>
+        </div>
+
+        <h2 class="pet-name">${pet.nome}</h2>
+        <p class="pet-description" id="pet-description">
+          Seu pequeno melhor amigo.
+        </p>
+      </section>
+
+      <section class="stats">
+        <div class="stat">
+          <div class="stat-label">
+            <span>Saciedade</span>
+            <span id="hunger-value">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill hunger-fill" id="hunger-bar"></div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">
+            <span>Felicidade</span>
+            <span id="happy-value">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill happy-fill" id="happy-bar"></div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">
+            <span>Energia</span>
+            <span id="energy-value">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill energy-fill" id="energy-bar"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button class="action-button" id="feed">
+          Alimentar
+        </button>
+
+        <button class="action-button" id="play">
+          Brincar
+        </button>
+
+        <button class="action-button" id="sleep">
+          Dormir
+        </button>
+      </section>
+
+      <p class="message" id="message" aria-live="polite">
+        Mochi está feliz em te ver.
+      </p>
+
+      <footer class="game-footer">
+        MADE WITH LOVE · POCKET PET
+      </footer>
+    </main>
+  `;
+}
+
+function atualizarStatus(
+  barraId: string,
+  valorId: string,
+  valor: number
+): void {
+  const barra = document.getElementById(barraId);
+  const texto = document.getElementById(valorId);
+
+  if (barra) {
+    barra.style.width = `${valor}%`;
+  }
+
+  if (texto) {
+    texto.textContent = `${valor}%`;
+  }
+}
+
+function atualizarHumor(): void {
+  const bichinho = document.getElementById('pet');
+  const status = document.getElementById('pet-status');
+  const descricao = document.getElementById('pet-description');
+
+  const humor = descobrirHumor();
+
+  const estados: Record<Humor, {
+    nome: string;
+    descricao: string;
+  }> = {
+    feliz: {
+      nome: 'Feliz',
+      descricao: 'Mochi está aproveitando o dia.'
+    },
+    triste: {
+      nome: 'Tristinho',
+      descricao: 'Um pouco de atenção faria bem.'
+    },
+    cansado: {
+      nome: 'Sonolento',
+      descricao: 'Uma soneca seria perfeita.'
+    },
+    faminto: {
+      nome: 'Com fome',
+      descricao: 'Está na hora de comer alguma coisa.'
+    }
+  };
+
+  if (bichinho) {
+    bichinho.className = `pet ${humor}`;
+  }
+
+  if (status) {
+    status.textContent = estados[humor].nome;
+  }
+
+  if (descricao) {
+    descricao.textContent = estados[humor].descricao;
+  }
+}
+
+function atualizarTela(): void {
+  atualizarStatus('hunger-bar', 'hunger-value', pet.fome);
+  atualizarStatus('happy-bar', 'happy-value', pet.felicidade);
+  atualizarStatus('energy-bar', 'energy-value', pet.energia);
+
+  atualizarHumor();
+}
+
+function mostrarMensagem(texto: string): void {
+  const mensagem = document.getElementById('message');
+
+  if (mensagem) {
+    mensagem.textContent = texto;
+  }
+}
+
+function verificarNecessidades(): void {
+  const humor = descobrirHumor();
+
+  if (humor === 'faminto') {
+    mostrarMensagem('Mochi precisa de uma refeição.');
+  } else if (humor === 'cansado') {
+    mostrarMensagem('Mochi está precisando descansar.');
+  } else if (humor === 'triste') {
+    mostrarMensagem('Mochi gostaria de brincar com você.');
+  } else if (pet.fome <= 40) {
+    mostrarMensagem('Mochi está começando a sentir fome.');
+  } else if (pet.energia <= 40) {
+    mostrarMensagem('Mochi está ficando cansadinho.');
+  } else {
+    mostrarMensagem('Tudo tranquilo por aqui.');
+  }
+}
+
+document.querySelector('#feed')?.addEventListener('click', () => {
+  pet.fome = limitar(pet.fome + 15);
+
+  atualizarTela();
+  salvarPet();
+  mostrarMensagem('Mochi adorou a refeição!');
+});
+
+document.querySelector('#play')?.addEventListener('click', () => {
+  if (pet.energia < 10) {
+    mostrarMensagem('Mochi está cansado demais para brincar.');
+    return;
+  }
+
+  pet.felicidade = limitar(pet.felicidade + 15);
+  pet.energia = limitar(pet.energia - 10);
+
+  atualizarTela();
+  salvarPet();
+  mostrarMensagem('Mochi se divertiu muito com você!');
+});
+
+document.querySelector('#sleep')?.addEventListener('click', () => {
+  pet.energia = limitar(pet.energia + 20);
+
+  atualizarTela();
+  salvarPet();
+  mostrarMensagem('Mochi acordou de uma ótima soneca.');
+});
+
+function passarTempo(): void {
+  pet.fome = limitar(pet.fome - 5);
+  pet.felicidade = limitar(pet.felicidade - 3);
+  pet.energia = limitar(pet.energia - 4);
+
+  atualizarTela();
+  salvarPet();
+  verificarNecessidades();
+}
+
+setInterval(passarTempo, INTERVALO);
+
+atualizarTela();
+verificarNecessidades();
