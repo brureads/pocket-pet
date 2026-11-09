@@ -3,6 +3,8 @@ import './style.css';
 
 type Humor = 'feliz' | 'triste' | 'cansado' | 'faminto';
 type Cor = 'branco' | 'rosa' | 'lilas' | 'creme';
+type Acessorio = 'lacinho' | 'oculos' | 'coroa';
+type Equipado = Acessorio | 'nenhum';
 
 interface Pet {
   nome: string;
@@ -10,23 +12,63 @@ interface Pet {
   fome: number;
   felicidade: number;
   energia: number;
+  moedas: number;
+  inventario: Acessorio[];
+  equipado: Equipado;
 }
+
+interface Produto {
+  id: Acessorio;
+  nome: string;
+  preco: number;
+  descricao: string;
+}
+
+const produtos: Produto[] = [
+  {
+    id: 'lacinho',
+    nome: 'Lacinho',
+    preco: 30,
+    descricao: 'Um toque delicado.'
+  },
+  {
+    id: 'oculos',
+    nome: 'Óculos',
+    preco: 50,
+    descricao: 'Para os dias de estilo.'
+  },
+  {
+    id: 'coroa',
+    nome: 'Coroa',
+    preco: 100,
+    descricao: 'Para a realeza.'
+  }
+];
 
 const petInicial: Pet = {
   nome: 'Mochi',
   cor: 'branco',
   fome: 75,
   felicidade: 90,
-  energia: 80
+  energia: 80,
+  moedas: 20,
+  inventario: [],
+  equipado: 'nenhum'
 };
 
 const INTERVALO = 30000;
 const CHAVE_SALVAMENTO = 'pocket-pet-save';
 
 const cores: Cor[] = ['branco', 'rosa', 'lilas', 'creme'];
+const acessorios: Acessorio[] = ['lacinho', 'oculos', 'coroa'];
 
 function limitar(valor: number): number {
   return Math.max(0, Math.min(100, valor));
+}
+
+function ehAcessorio(valor: unknown): valor is Acessorio {
+  return typeof valor === 'string' &&
+    acessorios.includes(valor as Acessorio);
 }
 
 function carregarPet(): Pet {
@@ -39,27 +81,59 @@ function carregarPet(): Pet {
       if (typeof salvo === 'object' && salvo !== null) {
         const valores = salvo as Record<string, unknown>;
 
-        if (
-          typeof valores.fome === 'number' &&
-          Number.isFinite(valores.fome) &&
-          typeof valores.felicidade === 'number' &&
-          Number.isFinite(valores.felicidade) &&
-          typeof valores.energia === 'number' &&
-          Number.isFinite(valores.energia)
-        ) {
-          return {
-            nome:
-              typeof valores.nome === 'string'
-                ? valores.nome.slice(0, 20)
-                : petInicial.nome,
-            cor: cores.includes(valores.cor as Cor)
-              ? valores.cor as Cor
-              : petInicial.cor,
-            fome: limitar(valores.fome),
-            felicidade: limitar(valores.felicidade),
-            energia: limitar(valores.energia)
-          };
-        }
+        const inventario: Acessorio[] = Array.isArray(valores.inventario)
+          ? [...new Set(valores.inventario.filter(ehAcessorio))]
+          : [];
+
+        const equipado: Equipado =
+          ehAcessorio(valores.equipado) &&
+          inventario.includes(valores.equipado)
+            ? valores.equipado
+            : 'nenhum';
+
+        const numeroValido = (
+          valor: unknown,
+          padrao: number
+        ): number => {
+          return typeof valor === 'number' &&
+            Number.isFinite(valor)
+              ? limitar(valor)
+              : padrao;
+        };
+
+        return {
+          nome:
+            typeof valores.nome === 'string' &&
+            valores.nome.trim()
+              ? valores.nome.trim().slice(0, 20)
+              : petInicial.nome,
+
+          cor: cores.includes(valores.cor as Cor)
+            ? valores.cor as Cor
+            : petInicial.cor,
+
+          fome: numeroValido(valores.fome, petInicial.fome),
+
+          felicidade: numeroValido(
+            valores.felicidade,
+            petInicial.felicidade
+          ),
+
+          energia: numeroValido(
+            valores.energia,
+            petInicial.energia
+          ),
+
+          moedas:
+            typeof valores.moedas === 'number' &&
+            Number.isSafeInteger(valores.moedas) &&
+            valores.moedas >= 0
+              ? valores.moedas
+              : petInicial.moedas,
+
+          inventario,
+          equipado
+        };
       }
     } catch {
       console.warn('Não foi possível carregar o progresso.');
@@ -97,6 +171,12 @@ if (app) {
         <p class="subtitle">
           Um cantinho especial para cuidar do seu bichinho.
         </p>
+
+        <div class="wallet">
+          <span class="coin-symbol">C</span>
+          <span id="coin-value">20</span>
+          <span>moedas</span>
+        </div>
       </header>
 
       <section class="pet-area">
@@ -122,6 +202,8 @@ if (app) {
                 <div class="mouth"></div>
               </div>
             </div>
+
+            <div class="accessory" id="pet-accessory"></div>
           </div>
 
           <div class="pet-shadow"></div>
@@ -190,6 +272,10 @@ if (app) {
         </button>
       </section>
 
+      <button class="shop-button" id="open-shop">
+        Abrir lojinha
+      </button>
+
       <p class="message" id="message" aria-live="polite"></p>
 
       <footer class="game-footer">
@@ -203,10 +289,11 @@ if (app) {
         <h2 id="modal-title">Personalizar bichinho</h2>
 
         <p class="modal-description">
-          Deixe seu pequeno companheiro com a sua cara.
+          Deixe seu companheiro com a sua cara.
         </p>
 
         <label for="pet-name-input">Nome</label>
+
         <input
           type="text"
           id="pet-name-input"
@@ -253,6 +340,31 @@ if (app) {
           </button>
         </div>
       </form>
+    </dialog>
+
+    <dialog class="shop-modal" id="shop-modal"
+            aria-labelledby="shop-title">
+      <div class="shop-header">
+        <span class="eyebrow">POCKET PET SHOP</span>
+        <h2 id="shop-title">Little Boutique</h2>
+        <p>Pequenos presentes para seu bichinho.</p>
+
+        <div class="shop-wallet">
+          <span class="coin-symbol">C</span>
+          <span id="shop-coins">20</span>
+          <span>moedas disponíveis</span>
+        </div>
+      </div>
+
+      <div class="shop-products" id="shop-products"></div>
+
+      <p class="shop-message" id="shop-message" aria-live="polite">
+        Escolha algo especial.
+      </p>
+
+      <button class="close-shop" id="close-shop">
+        Voltar ao jogo
+      </button>
     </dialog>
   `;
 }
@@ -311,6 +423,29 @@ function atualizarHumor(): void {
   }
 }
 
+function atualizarAcessorio(): void {
+  const elemento = document.getElementById('pet-accessory');
+
+  if (elemento) {
+    elemento.className = 'accessory';
+
+    if (pet.equipado !== 'nenhum') {
+      elemento.classList.add(`accessory-${pet.equipado}`);
+    }
+  }
+}
+
+function atualizarMoedas(): void {
+  const carteira = document.getElementById('coin-value');
+  const carteiraLoja = document.getElementById('shop-coins');
+
+  if (carteira) carteira.textContent = String(pet.moedas);
+
+  if (carteiraLoja) {
+    carteiraLoja.textContent = String(pet.moedas);
+  }
+}
+
 function atualizarTela(): void {
   atualizarStatus('hunger-bar', 'hunger-value', pet.fome);
   atualizarStatus('happy-bar', 'happy-value', pet.felicidade);
@@ -321,6 +456,8 @@ function atualizarTela(): void {
   if (nome) nome.textContent = pet.nome;
 
   atualizarHumor();
+  atualizarAcessorio();
+  atualizarMoedas();
 }
 
 function mostrarMensagem(texto: string): void {
@@ -347,12 +484,23 @@ function verificarNecessidades(): void {
   }
 }
 
+function ganharMoedas(): void {
+  pet.moedas += 5;
+}
+
 document.querySelector('#feed')?.addEventListener('click', () => {
+  if (pet.fome === 100) {
+    mostrarMensagem(`${pet.nome} já está satisfeito.`);
+    return;
+  }
+
   pet.fome = limitar(pet.fome + 15);
+  ganharMoedas();
 
   atualizarTela();
   salvarPet();
-  mostrarMensagem(`${pet.nome} adorou a refeição!`);
+
+  mostrarMensagem(`${pet.nome} adorou a refeição! +5 moedas.`);
 });
 
 document.querySelector('#play')?.addEventListener('click', () => {
@@ -361,21 +509,38 @@ document.querySelector('#play')?.addEventListener('click', () => {
     return;
   }
 
+  if (pet.felicidade === 100) {
+    mostrarMensagem(`${pet.nome} já está muito feliz.`);
+    return;
+  }
+
   pet.felicidade = limitar(pet.felicidade + 15);
   pet.energia = limitar(pet.energia - 10);
 
+  ganharMoedas();
+
   atualizarTela();
   salvarPet();
-  mostrarMensagem(`${pet.nome} se divertiu muito!`);
+
+  mostrarMensagem(`${pet.nome} se divertiu! +5 moedas.`);
 });
 
 document.querySelector('#sleep')?.addEventListener('click', () => {
+  if (pet.energia === 100) {
+    mostrarMensagem(`${pet.nome} já está descansado.`);
+    return;
+  }
+
   pet.energia = limitar(pet.energia + 20);
+  ganharMoedas();
 
   atualizarTela();
   salvarPet();
-  mostrarMensagem(`${pet.nome} acordou de uma ótima soneca.`);
+
+  mostrarMensagem(`${pet.nome} descansou! +5 moedas.`);
 });
+
+// Personalização
 
 const modal = document.querySelector<HTMLDialogElement>(
   '#customize-modal'
@@ -443,6 +608,122 @@ formulario?.addEventListener('submit', (evento) => {
 nomeInput?.addEventListener('input', () => {
   nomeInput.setCustomValidity('');
 });
+
+// Lojinha e inventário
+
+const loja = document.querySelector<HTMLDialogElement>('#shop-modal');
+
+function mensagemLoja(texto: string): void {
+  const mensagem = document.getElementById('shop-message');
+
+  if (mensagem) mensagem.textContent = texto;
+}
+
+function renderizarLoja(): void {
+  const container = document.getElementById('shop-products');
+
+  if (!container) return;
+
+  container.innerHTML = produtos.map((produto) => {
+    const comprado = pet.inventario.includes(produto.id);
+    const equipado = pet.equipado === produto.id;
+
+    let textoBotao = `Comprar · ${produto.preco}`;
+    let desabilitado = pet.moedas < produto.preco;
+
+    if (comprado) {
+      textoBotao = equipado ? 'Remover' : 'Equipar';
+      desabilitado = false;
+    }
+
+    return `
+      <article class="product-card">
+        <div class="product-preview preview-${produto.id}">
+          <div class="product-icon icon-${produto.id}"></div>
+        </div>
+
+        <h3>${produto.nome}</h3>
+        <p>${produto.descricao}</p>
+
+        <button
+          class="product-button"
+          data-product="${produto.id}"
+          ${desabilitado ? 'disabled' : ''}
+        >
+          ${textoBotao}
+        </button>
+      </article>
+    `;
+  }).join('');
+
+  atualizarMoedas();
+}
+
+function selecionarProduto(id: Acessorio): void {
+  const produto = produtos.find((item) => item.id === id);
+
+  if (!produto) return;
+
+  const comprado = pet.inventario.includes(id);
+
+  if (comprado) {
+    if (pet.equipado === id) {
+      pet.equipado = 'nenhum';
+      mensagemLoja(`${produto.nome} removido.`);
+    } else {
+      pet.equipado = id;
+      mensagemLoja(`${produto.nome} equipado!`);
+    }
+  } else {
+    if (pet.moedas < produto.preco) {
+      mensagemLoja('Você ainda não tem moedas suficientes.');
+      return;
+    }
+
+    pet.moedas -= produto.preco;
+    pet.inventario.push(id);
+    pet.equipado = id;
+
+    mensagemLoja(`${produto.nome} comprado e equipado!`);
+  }
+
+  salvarPet();
+  atualizarTela();
+  renderizarLoja();
+}
+
+document.querySelector('#open-shop')?.addEventListener('click', () => {
+  renderizarLoja();
+  mensagemLoja('Escolha algo especial.');
+  loja?.showModal();
+});
+
+document.querySelector('#close-shop')?.addEventListener('click', () => {
+  loja?.close();
+});
+
+document.querySelector('#shop-products')?.addEventListener(
+  'click',
+  (evento) => {
+    const alvo = evento.target;
+
+    if (!(alvo instanceof Element)) return;
+
+    const botao = alvo.closest<HTMLButtonElement>(
+      '[data-product]'
+    );
+
+    if (!botao || botao.disabled) return;
+
+    const id = botao.dataset.product;
+
+    if (ehAcessorio(id)) {
+      selecionarProduto(id);
+    }
+  }
+);
+
+// Passagem do tempo
 
 function passarTempo(): void {
   pet.fome = limitar(pet.fome - 5);
